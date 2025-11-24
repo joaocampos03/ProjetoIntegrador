@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Aeroporto {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  codigo              String   @unique
+  nome                String
+  cidade              String
+  estado              String
+  descricao           String
+  imagemUrl           String
+  vooRegular          Boolean  @default(true)
+  frequenciaSemanal   Int      @default(0)
+  
+  // Relacionamentos
+  rotasOrigem         Rota[]   @relation("AeroportoOrigem")
+  rotasDestino        Rota[]   @relation("AeroportoDestino")
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("aeroportos")
+}
+
+model Rota {
+  id                  String     @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Origem
+  aeroportoOrigemId   String     @db.ObjectId
+  aeroportoOrigem     Aeroporto  @relation("AeroportoOrigem", fields: [aeroportoOrigemId], references: [id])
+  codigoOrigem        String
+  
+  // Destino
+  aeroportoDestinoId  String     @db.ObjectId
+  aeroportoDestino    Aeroporto  @relation("AeroportoDestino", fields: [aeroportoDestinoId], references: [id])
+  codigoDestino       String
+  
+  // Informações da rota
+  vooRegular          Boolean    @default(true)
+  frequenciaSemanal   Int
+  bidirecional        Boolean    @default(true)
+  
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  
+  @@unique([codigoOrigem, codigoDestino])
+  @@map("rotas")
+}
+
+model Consulta {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  origem              String
+  destino             String
+  tipoConsulta        String   // "voo_direto", "rota_curta", "rotas_escala"
+  resultado           Json
+  tempoResposta       Int      // em milissegundos
+  
+  createdAt           DateTime @default(now())
+  
+  @@map("consultas")
+}
+
+model Usuario {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  nome                String
+  email               String   @unique
+  senha               String   // Hash da senha
+  endereco            String
+  dataNascimento      DateTime
+  sexo                String   // "M", "F", "Outro"
+  cpf                 String   @unique
+  telefone            String
+  
+  // Relacionamento com rotas salvas
+  rotasSalvas         RotaSalva[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("usuarios")
+}
+
+model RotaSalva {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Relacionamento com usuário
+  usuarioId           String   @db.ObjectId
+  usuario             Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  // Nome da rota (ex: "Viagem de Férias", "Rota de Negócios")
+  nome                String
+  
+  // Descrição opcional
+  descricao           String?
+  
+  // Array com os códigos dos aeroportos na sequência
+  aeroportos          String[] // Ex: ["GIG", "GRU", "SSA"]
+  
+  // Informações detalhadas dos aeroportos (JSON)
+  detalhesAeroportos  Json     // Array com nome, cidade, estado de cada aeroporto
+  
+  // Status da rota
+  ativa               Boolean  @default(true)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("rotas_salvas")
+}
