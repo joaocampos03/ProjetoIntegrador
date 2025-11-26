@@ -2,11 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class RotaSalvaController {
-
+  
+  // Salvar nova rota
   static async salvar(req, res) {
     try {
       const { usuarioId, nome, descricao, aeroportos } = req.body;
 
+      // Validações
       if (!usuarioId) {
         return res.status(400).json({
           success: false,
@@ -28,6 +30,7 @@ class RotaSalvaController {
         });
       }
 
+      // Verificar se usuário existe
       const usuario = await prisma.usuario.findUnique({
         where: { id: usuarioId }
       });
@@ -39,8 +42,15 @@ class RotaSalvaController {
         });
       }
 
+      // Buscar detalhes dos aeroportos e calcular preço
       const detalhesAeroportos = [];
-      for (const codigo of aeroportos) {
+      const trechos = [];
+      let precoTotal = 0;
+
+      for (let i = 0; i < aeroportos.length; i++) {
+        const codigo = aeroportos[i];
+        
+        // Buscar aeroporto
         const aeroporto = await prisma.aeroporto.findUnique({
           where: { codigo: codigo.toUpperCase() },
           select: {
@@ -60,13 +70,46 @@ class RotaSalvaController {
         }
 
         detalhesAeroportos.push(aeroporto);
+
+        // Se não é o último aeroporto, buscar o trecho para o próximo
+        if (i < aeroportos.length - 1) {
+          const origem = codigo.toUpperCase();
+          const destino = aeroportos[i + 1].toUpperCase();
+
+          // Buscar rota entre origem e destino
+          const rota = await prisma.rota.findFirst({
+            where: {
+              codigoOrigem: origem,
+              codigoDestino: destino
+            }
+          });
+
+          if (!rota) {
+            return res.status(404).json({
+              success: false,
+              message: `Não existe voo direto de ${origem} para ${destino}`
+            });
+          }
+
+          // Adicionar trecho e somar preço
+          trechos.push({
+            origem: origem,
+            destino: destino,
+            preco: rota.preco,
+            frequenciaSemanal: rota.frequenciaSemanal
+          });
+
+          precoTotal += rota.preco;
+        }
       }
 
+      // Criar rota salva
       const rotaSalva = await prisma.rotaSalva.create({
         data: {
           usuarioId,
           nome: nome.trim(),
           descricao: descricao ? descricao.trim() : null,
+          preco: precoTotal,
           aeroportos: aeroportos.map(a => a.toUpperCase()),
           detalhesAeroportos: detalhesAeroportos,
           ativa: true
@@ -85,7 +128,15 @@ class RotaSalvaController {
       res.status(201).json({
         success: true,
         message: 'Rota salva com sucesso!',
-        data: rotaSalva
+        data: {
+          ...rotaSalva,
+          trechos: trechos,
+          resumo: {
+            totalAeroportos: aeroportos.length,
+            totalTrechos: trechos.length,
+            precoTotal: precoTotal
+          }
+        }
       });
 
     } catch (error) {
@@ -98,6 +149,7 @@ class RotaSalvaController {
     }
   }
 
+  // Listar rotas de um usuário
   static async listarPorUsuario(req, res) {
     try {
       const { usuarioId } = req.params;
@@ -128,6 +180,7 @@ class RotaSalvaController {
     }
   }
 
+  // Buscar rota específica
   static async buscarPorId(req, res) {
     try {
       const { id } = req.params;
@@ -167,6 +220,7 @@ class RotaSalvaController {
     }
   }
 
+  // Atualizar rota
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
@@ -194,6 +248,7 @@ class RotaSalvaController {
       }
 
       if (aeroportos && Array.isArray(aeroportos) && aeroportos.length >= 2) {
+        // Buscar detalhes dos novos aeroportos
         const detalhesAeroportos = [];
         for (const codigo of aeroportos) {
           const aeroporto = await prisma.aeroporto.findUnique({
@@ -251,7 +306,8 @@ class RotaSalvaController {
     }
   }
 
-  static async deletarRota(req, res) {
+  // Deletar permanentemente
+  static async deletar(req, res) {
     try {
       const { id } = req.params;
 
@@ -272,7 +328,7 @@ class RotaSalvaController {
 
       res.json({
         success: true,
-        message: 'Rota deletada com sucesso!'
+        message: 'Rota deletada permanentemente'
       });
 
     } catch (error) {
@@ -284,7 +340,8 @@ class RotaSalvaController {
       });
     }
   }
-  
+
+  // Listar todas as rotas (admin)
   static async listarTodas(req, res) {
     try {
       const rotas = await prisma.rotaSalva.findMany({

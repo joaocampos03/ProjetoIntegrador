@@ -49,6 +49,9 @@ model Rota {
   frequenciaSemanal   Int
   bidirecional        Boolean    @default(true)
   
+  // Preço da rota
+  preco               Float      @default(0)
+  
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   
@@ -101,6 +104,9 @@ model RotaSalva {
   
   // Descrição opcional
   descricao           String?
+  
+  // Preço da rota
+  preco               Float    @default(0)
   
   // Array com os códigos dos aeroportos na sequência
   aeroportos          String[] // Ex: ["GIG", "GRU", "SSA"]

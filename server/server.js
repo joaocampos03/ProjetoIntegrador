@@ -69,7 +69,8 @@ app.get('/aeroportos', async (req, res) => {
         nome: rota.aeroportoDestino.nome,
         cidade: rota.aeroportoDestino.cidade,
         estado: rota.aeroportoDestino.estado,
-        frequenciaSemanal: rota.frequenciaSemanal
+        frequenciaSemanal: rota.frequenciaSemanal,
+        preco: rota.preco
       })).sort((a, b) => b.frequenciaSemanal - a.frequenciaSemanal),
       totalVoos: aeroporto.rotasOrigem.length,
       frequenciaSemanal: aeroporto.frequenciaSemanal
@@ -141,7 +142,8 @@ app.get('/aeroportos/detalhes/:codigo', async (req, res) => {
           descricao: rota.aeroportoDestino.descricao,
           imagemUrl: rota.aeroportoDestino.imagemUrl,
           frequenciaSemanal: rota.frequenciaSemanal,
-          vooRegular: rota.vooRegular
+          vooRegular: rota.vooRegular,
+          preco: rota.preco
         })),
         estatisticas: {
           totalVoos: aeroporto.rotasOrigem.length,
@@ -237,13 +239,10 @@ app.post('/salvar-rota', RotaSalvaController.salvar);
 app.get('/rota-salva/:usuarioId', RotaSalvaController.listarPorUsuario);
 app.get('/rota-salva/:id', RotaSalvaController.buscarPorId);
 app.put('/atualizar-rota/:id', RotaSalvaController.atualizar);
-app.delete('/deletar-rota/:id', RotaSalvaController.deletarRota);
+app.delete('/deletar-rota/:id', RotaSalvaController.deletar);
 app.get('/rotas-salvas', RotaSalvaController.listarTodas);
 
-// ======================================== 
-// Health Check
-// ========================================
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'API LATAM Rotas funcionando!',
@@ -252,7 +251,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Inicializar servidor
 app.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
   
