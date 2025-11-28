@@ -7,12 +7,10 @@ class GrafoService {
     this.aeroportosCache = new Map();
   }
 
-  // Carregar grafo do banco de dados
   async carregarGrafo() {
     try {
       console.log('📊 Carregando grafo do banco de dados...');
 
-      // Buscar todas as rotas com relacionamentos
       const rotas = await prisma.rota.findMany({
         include: {
           aeroportoOrigem: true,
@@ -20,21 +18,17 @@ class GrafoService {
         }
       });
 
-      // Limpar grafo atual
       this.listaAdjacencia.clear();
       this.aeroportosCache.clear();
 
-      // Construir lista de adjacência
       for (const rota of rotas) {
         const origem = rota.codigoOrigem;
         const destino = rota.aeroportoDestino;
 
-        // Adicionar aeroporto de origem se não existir
         if (!this.listaAdjacencia.has(origem)) {
           this.listaAdjacencia.set(origem, []);
         }
 
-        // Adicionar destino à lista de adjacência
         this.listaAdjacencia.get(origem).push({
           codigo: destino.codigo,
           cidade: destino.cidade,
@@ -43,7 +37,6 @@ class GrafoService {
           frequenciaSemanal: rota.frequenciaSemanal
         });
 
-        // Cache dos aeroportos
         if (!this.aeroportosCache.has(origem)) {
           this.aeroportosCache.set(origem, rota.aeroportoOrigem);
         }
@@ -60,13 +53,11 @@ class GrafoService {
     }
   }
 
-  // Verificar voo direto
   temVooDireto(origem, destino) {
     const destinos = this.listaAdjacencia.get(origem) || [];
     return destinos.some(a => a.codigo === destino);
   }
 
-  // Encontrar rota mais curta (BFS)
   encontrarRotaMaisCurta(origem, destino) {
     if (origem === destino) {
       return [origem];
@@ -96,7 +87,6 @@ class GrafoService {
     return [];
   }
 
-  // Encontrar rotas com até N escalas (DFS)
   encontrarRotasComEscala(origem, destino, maxEscalas) {
     const rotas = [];
     const rotaAtual = [origem];
@@ -127,17 +117,14 @@ class GrafoService {
     }
   }
 
-  // Obter todos os destinos diretos de um aeroporto
   getDestinos(aeroporto) {
     return this.listaAdjacencia.get(aeroporto) || [];
   }
 
-  // Obter lista de todos os aeroportos
   getAeroportos() {
     return Array.from(this.listaAdjacencia.keys());
   }
 
-  // Obter informações detalhadas de um aeroporto
   async getAeroportoDetalhes(codigo) {
     try {
       const aeroporto = await prisma.aeroporto.findUnique({
@@ -171,7 +158,6 @@ class GrafoService {
     }
   }
 
-  // Obter estatísticas do grafo
   async getEstatisticas() {
     try {
       const totalAeroportos = await prisma.aeroporto.count();
@@ -215,7 +201,6 @@ class GrafoService {
     }
   }
 
-  // Registrar consulta no banco
   async registrarConsulta(origem, destino, tipoConsulta, resultado, tempoResposta) {
     try {
       await prisma.consulta.create({
@@ -229,11 +214,9 @@ class GrafoService {
       });
     } catch (error) {
       console.error('Erro ao registrar consulta:', error);
-      // Não lançar erro para não quebrar a aplicação
     }
   }
 
-  // Buscar aeroportos por estado
   async buscarPorEstado(estado) {
     try {
       return await prisma.aeroporto.findMany({
@@ -246,7 +229,6 @@ class GrafoService {
     }
   }
 
-  // Buscar aeroportos por cidade
   async buscarPorCidade(cidade) {
     try {
       return await prisma.aeroporto.findMany({
@@ -264,7 +246,6 @@ class GrafoService {
     }
   }
 
-  // Listar todas as rotas de um aeroporto
   async listarRotasAeroporto(codigo) {
     try {
       const rotas = await prisma.rota.findMany({
@@ -293,7 +274,6 @@ class GrafoService {
   }
 }
 
-// Singleton instance
 const grafoService = new GrafoService();
 
 module.exports = grafoService;

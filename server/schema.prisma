@@ -18,6 +18,8 @@ model Aeroporto {
   estado              String
   descricao           String
   imagemUrl           String
+  latitude            Float
+  longitude           Float
   vooRegular          Boolean  @default(true)
   frequenciaSemanal   Int      @default(0)
   

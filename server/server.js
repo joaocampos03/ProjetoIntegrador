@@ -59,6 +59,8 @@ app.get('/aeroportos', async (req, res) => {
       localizacao: {
         cidade: aeroporto.cidade,
         estado: aeroporto.estado,
+        latitude: aeroporto.latitude,
+        longitude: aeroporto.longitude,
         pais: 'Brasil'
       },
       descricao: aeroporto.descricao,
