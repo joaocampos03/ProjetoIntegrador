@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const grafoService = require('../services/grafoService');
+
 const prisma = new PrismaClient();
 
 class RotaSalvaController {
@@ -45,7 +47,6 @@ class RotaSalvaController {
 
       for (let i = 0; i < aeroportos.length; i++) {
         const codigo = aeroportos[i];
-
         const aeroporto = await prisma.aeroporto.findUnique({
           where: { codigo: codigo.toUpperCase() },
           select: {
@@ -66,10 +67,12 @@ class RotaSalvaController {
 
         detalhesAeroportos.push(aeroporto);
 
+        // Se não é o último aeroporto, buscar o trecho para o próximo
         if (i < aeroportos.length - 1) {
           const origem = codigo.toUpperCase();
           const destino = aeroportos[i + 1].toUpperCase();
 
+          // Buscar rota entre origem e destino
           const rota = await prisma.rota.findFirst({
             where: {
               codigoOrigem: origem,
@@ -78,9 +81,25 @@ class RotaSalvaController {
           });
 
           if (!rota) {
-            return res.status(404).json({
+            // Se não existe voo direto, buscar rota com escalas usando o grafo
+            const rotaAlternativa = grafoService.encontrarRotaMaisCurta(origem, destino);
+            
+            if (!rotaAlternativa || rotaAlternativa.length === 0) {
+              return res.status(404).json({
+                success: false,
+                message: `Não existe nenhuma rota possível de ${origem} para ${destino}. Tente selecionar aeroportos com conexões diretas.`
+              });
+            }
+
+            // Se encontrou rota alternativa, sugerir ao usuário
+            return res.status(400).json({
               success: false,
-              message: `Não existe voo direto de ${origem} para ${destino}`
+              message: `Não existe voo direto de ${origem} para ${destino}`,
+              sugestao: {
+                message: `Existe uma rota alternativa com ${rotaAlternativa.length - 2} escala(s)`,
+                rotaSugerida: rotaAlternativa,
+                dica: `Tente adicionar aeroportos intermediários: ${rotaAlternativa.join(' → ')}`
+              }
             });
           }
 

@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const grafoService = require('./services/grafoService');
 const UserController = require('./controllers/userController');
 const RotaSalvaController = require('./controllers/rotaSalvaController');
+const RotasController = require('./controllers/rotasController');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -226,7 +227,14 @@ app.get('/aeroportos/estado/:estado', async (req, res) => {
 });
 
 // ========================================
-// ENDPOINTS DE USUÁRIOS
+// Endpoints de busca de rotas, usando grafo
+// ========================================
+app.get('/melhor-rota/:origem/:destino', RotasController.melhorCaminho);
+app.get('/rotas-alternativas/:origem/:destino', RotasController.rotasAlternativas);
+app.get('/rotas-voo-direto/:origem/:destino', RotasController.vooDireto);
+
+// ========================================
+// Endpoints de usuários
 // ========================================
 app.post('/cadastrar-usuario', UserController.cadastrar);
 app.post('/login', UserController.login);
@@ -235,7 +243,7 @@ app.get('/usuarios', UserController.listar);
 app.put('/atualizar-usuario/:id', UserController.atualizar);
 
 // ========================================
-// ENDPOINTS DE ROTAS SALVAS
+// Endpoints de rotas salvas
 // ========================================
 app.post('/salvar-rota', RotaSalvaController.salvar);
 app.get('/rota-salva/:usuarioId', RotaSalvaController.listarPorUsuario);
@@ -244,7 +252,10 @@ app.put('/atualizar-rota/:id', RotaSalvaController.atualizar);
 app.delete('/deletar-rota/:id', RotaSalvaController.deletar);
 app.get('/rotas-salvas', RotaSalvaController.listarTodas);
 
-app.get('/api/health', (req, res) => {
+// ========================================
+// Health Check
+// ========================================
+app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'API LATAM Rotas funcionando!',
