@@ -5,6 +5,7 @@ const grafoService = require('./services/grafoService');
 const UserController = require('./controllers/userController');
 const RotaSalvaController = require('./controllers/rotaSalvaController');
 const RotasController = require('./controllers/rotasController');
+const RotaCompartilhadaController = require('./controllers/rotaCompartilhadaController');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -251,6 +252,17 @@ app.get('/rota-salva/:id', RotaSalvaController.buscarPorId);
 app.put('/atualizar-rota/:id', RotaSalvaController.atualizar);
 app.delete('/deletar-rota/:id', RotaSalvaController.deletar);
 app.get('/rotas-salvas', RotaSalvaController.listarTodas);
+
+// ========================================
+// Endpoints de rotas compartilhadas
+// ========================================
+app.post('/compartilhar-rota', RotaCompartilhadaController.compartilhar);
+app.get('/rota/:codigo', RotaCompartilhadaController.buscarPorCodigo);
+app.delete('/rota-compartilhada/:codigo', RotaCompartilhadaController.desativar);
+app.put('/rota-compartilhada/:codigo', RotaCompartilhadaController.atualizar);
+app.get('/compartilhamentos/:usuarioId', RotaCompartilhadaController.listarPorUsuario);
+app.get('/rotas-publicas', RotaCompartilhadaController.listarPublicas);
+app.post('/salvar-rota-compartilhada', RotaCompartilhadaController.salvarComoMinha);
 
 // ========================================
 // Health Check

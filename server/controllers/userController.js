@@ -3,57 +3,6 @@ const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 class UserController {
-  
-  static validarCPF(cpf) {
-    cpf = cpf.replace(/[^\d]/g, '');
-    
-    if (cpf.length !== 11) return false;
-    if (/^(\d)\1+$/.test(cpf)) return false;
-    
-    let soma = 0;
-    for (let i = 0; i < 9; i++) {
-      soma += parseInt(cpf.charAt(i)) * (10 - i);
-    }
-    let resto = 11 - (soma % 11);
-    let digito1 = resto >= 10 ? 0 : resto;
-    
-    if (parseInt(cpf.charAt(9)) !== digito1) return false;
-    
-    soma = 0;
-    for (let i = 0; i < 10; i++) {
-      soma += parseInt(cpf.charAt(i)) * (11 - i);
-    }
-    resto = 11 - (soma % 11);
-    let digito2 = resto >= 10 ? 0 : resto;
-    
-    return parseInt(cpf.charAt(10)) === digito2;
-  }
-
-  static validarEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  }
-
-  static validarTelefone(telefone) {
-    const regex = /^\(?[1-9]{2}\)?\s?9?\d{4}-?\d{4}$/;
-    return regex.test(telefone.replace(/\s/g, ''));
-  }
-
-  static validarDataNascimento(data) {
-    const nascimento = new Date(data);
-    const hoje = new Date();
-    const idade = hoje.getFullYear() - nascimento.getFullYear();
-    
-    if (idade < 18) {
-      return { valido: false, mensagem: 'Usuário deve ter pelo menos 18 anos' };
-    }
-    
-    if (idade > 120) {
-      return { valido: false, mensagem: 'Data de nascimento inválida' };
-    }
-    
-    return { valido: true };
-  }
 
   static async cadastrar(req, res) {
     try {
@@ -92,46 +41,10 @@ class UserController {
         });
       }
 
-      if (!UserController.validarEmail(email)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email inválido'
-        });
-      }
-
       if (senha.length < 6) {
         return res.status(400).json({
           success: false,
           message: 'Senha deve ter pelo menos 6 caracteres'
-        });
-      }
-
-      if (!UserController.validarCPF(cpf)) {
-        return res.status(400).json({
-          success: false,
-          message: 'CPF inválido'
-        });
-      }
-
-      if (!UserController.validarTelefone(telefone)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Telefone inválido. Use formato: (11) 98888-7777'
-        });
-      }
-
-      if (!['M', 'F', 'Outro'].includes(sexo)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Sexo deve ser: M, F ou Outro'
-        });
-      }
-
-      const validacaoData = UserController.validarDataNascimento(dataNascimento);
-      if (!validacaoData.valido) {
-        return res.status(400).json({
-          success: false,
-          message: validacaoData.mensagem
         });
       }
 
