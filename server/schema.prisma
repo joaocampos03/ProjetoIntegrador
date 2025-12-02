@@ -119,8 +119,37 @@ model RotaSalva {
   // Status da rota
   ativa               Boolean  @default(true)
   
+  // Relacionamento com compartilhamentos
+  compartilhamentos   RotaCompartilhada[]
+  
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   
   @@map("rotas_salvas")
+}
+
+model RotaCompartilhada {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Código único para o link compartilhável (ex: "abc123xyz")
+  codigo              String   @unique
+  
+  // Relacionamento com a rota salva original
+  rotaSalvaId         String   @db.ObjectId
+  rotaSalva           RotaSalva @relation(fields: [rotaSalvaId], references: [id], onDelete: Cascade)
+  
+  // Controle de privacidade
+  publica             Boolean  @default(false)  // Se true, pode aparecer em galeria pública
+  ativa               Boolean  @default(true)   // Se false, o link não funciona mais
+  
+  // Estatísticas
+  visualizacoes       Int      @default(0)
+  
+  // Data de expiração (opcional)
+  expiraEm            DateTime?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("rotas_compartilhadas")
 }
