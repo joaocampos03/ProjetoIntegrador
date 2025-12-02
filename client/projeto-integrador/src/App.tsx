@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { LandingPage } from "@/components/landing/LandingPage";
+import { SobrePage } from "@/components/landing/SobrePage";
+import { LoginPage } from "@/components/auth/LoginPage";
+import { RegisterPage } from "@/components/auth/RegisterPage";
+import { MainPage } from "@/components/main/MainPage";
+import { SavedRoutesPage } from "@/components/main/SavedRoutesPage";
+import { SharedRoutePage } from "@/components/main/SharedRoutePage";
+import { Toaster } from "@/components/ui/sonner";
+
+const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
+  const isLoggedIn =
+    localStorage.getItem("facilitavoos_is_logged_in") === "true";
+  const userId = localStorage.getItem("facilitavoos_user_id");
+  if (!isLoggedIn || !userId) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/sobre" element={<SobrePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/rota-compartilhada/:codigo" element={<SharedRoutePage />} />
+        <Route
+          path="/escolha-viagem"
+          element={
+            <ProtectedRoute>
+              <MainPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rotas-salvas"
+          element={
+            <ProtectedRoute>
+              <SavedRoutesPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+      <Toaster />
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
