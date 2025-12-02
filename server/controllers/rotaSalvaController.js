@@ -82,6 +82,18 @@ class RotaSalvaController {
 
           if (!rota) {
             // Se não existe voo direto, buscar rota com escalas usando o grafo
+            // Verificar se o grafo está carregado
+            const aeroportosNoGrafo = grafoService.getAeroportos();
+            
+            // Se o grafo estiver vazio, tentar recarregar
+            if (aeroportosNoGrafo.length === 0) {
+              try {
+                await grafoService.carregarGrafo();
+              } catch (err) {
+                // Silenciosamente ignora erro de recarga
+              }
+            }
+
             const rotaAlternativa = grafoService.encontrarRotaMaisCurta(origem, destino);
             
             if (!rotaAlternativa || rotaAlternativa.length === 0) {
@@ -91,6 +103,31 @@ class RotaSalvaController {
               });
             }
 
+            // Calcular o preço da rota alternativa
+            let precoRotaAlternativa = 0;
+            const trechosAlternativos = [];
+            
+            for (let j = 0; j < rotaAlternativa.length - 1; j++) {
+              const trechoOrigem = rotaAlternativa[j];
+              const trechoDestino = rotaAlternativa[j + 1];
+              
+              const trechoRota = await prisma.rota.findFirst({
+                where: {
+                  codigoOrigem: trechoOrigem,
+                  codigoDestino: trechoDestino
+                }
+              });
+              
+              if (trechoRota) {
+                precoRotaAlternativa += trechoRota.preco;
+                trechosAlternativos.push({
+                  origem: trechoOrigem,
+                  destino: trechoDestino,
+                  preco: trechoRota.preco
+                });
+              }
+            }
+
             // Se encontrou rota alternativa, sugerir ao usuário
             return res.status(400).json({
               success: false,
@@ -98,6 +135,8 @@ class RotaSalvaController {
               sugestao: {
                 message: `Existe uma rota alternativa com ${rotaAlternativa.length - 2} escala(s)`,
                 rotaSugerida: rotaAlternativa,
+                trechos: trechosAlternativos,
+                precoTotal: precoRotaAlternativa,
                 dica: `Tente adicionar aeroportos intermediários: ${rotaAlternativa.join(' → ')}`
               }
             });
