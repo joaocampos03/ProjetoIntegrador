@@ -39,7 +39,6 @@ ProjetoIntegrador/
 │   ├── controllers/           # Controladores da API
 │   ├── services/              # Serviços (grafo)
 │   ├── schema.prisma          # Modelo do banco de dados
-│   ├── seed.js                # Dados iniciais
 │   └── server.js              # Servidor Express
 │
 └── README.md
