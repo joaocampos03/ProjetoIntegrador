@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 class RotasController {
   
-  // Método auxiliar para garantir que o grafo está carregado
   static async garantirGrafoCarregado() {
     const aeroportosNoGrafo = grafoService.getAeroportos();
     if (aeroportosNoGrafo.length === 0) {
@@ -13,13 +12,11 @@ class RotasController {
     }
   }
 
-  // Buscar melhor caminho entre dois aeroportos (MENOR NÚMERO DE ESCALAS)
   static async melhorCaminho(req, res) {
     try {
       const { origem, destino } = req.params;
       const inicio = Date.now();
 
-      // Validar aeroportos
       const origemUpper = origem.toUpperCase();
       const destinoUpper = destino.toUpperCase();
 
@@ -30,7 +27,6 @@ class RotasController {
         });
       }
 
-      // Verificar se aeroportos existem
       const aeroportoOrigem = await prisma.aeroporto.findUnique({
         where: { codigo: origemUpper }
       });
@@ -53,10 +49,8 @@ class RotasController {
         });
       }
 
-      // Garantir que o grafo está carregado (importante para Vercel/serverless)
       await RotasController.garantirGrafoCarregado();
 
-      // Buscar melhor rota usando BFS (MENOR NÚMERO DE ESCALAS)
       const rotaCodigos = grafoService.encontrarRotaMaisCurta(origemUpper, destinoUpper);
 
       if (!rotaCodigos || rotaCodigos.length === 0) {
@@ -66,7 +60,6 @@ class RotasController {
         });
       }
 
-      // Buscar detalhes de cada aeroporto e calcular preços dos trechos
       const detalhesRota = [];
       const trechos = [];
       let precoTotal = 0;
@@ -74,7 +67,6 @@ class RotasController {
       for (let i = 0; i < rotaCodigos.length; i++) {
         const codigo = rotaCodigos[i];
         
-        // Buscar aeroporto
         const aeroporto = await prisma.aeroporto.findUnique({
           where: { codigo }
         });
@@ -89,7 +81,6 @@ class RotasController {
           ordem: i + 1
         });
 
-        // Se não é o último, buscar trecho
         if (i < rotaCodigos.length - 1) {
           const proximoCodigo = rotaCodigos[i + 1];
           
@@ -114,7 +105,6 @@ class RotasController {
 
       const tempoResposta = Date.now() - inicio;
 
-      // Registrar consulta
       await grafoService.registrarConsulta(
         origemUpper,
         destinoUpper,
@@ -158,14 +148,12 @@ class RotasController {
     }
   }
 
-  // Buscar todas as rotas alternativas (com limite de escalas)
   static async rotasAlternativas(req, res) {
     try {
       const { origem, destino } = req.params;
       const maxEscalas = parseInt(req.query.maxEscalas) || 2;
       const inicio = Date.now();
 
-      // Validar
       const origemUpper = origem.toUpperCase();
       const destinoUpper = destino.toUpperCase();
 
@@ -183,7 +171,6 @@ class RotasController {
         });
       }
 
-      // Verificar se aeroportos existem
       const aeroportoOrigem = await prisma.aeroporto.findUnique({
         where: { codigo: origemUpper }
       });
@@ -199,10 +186,8 @@ class RotasController {
         });
       }
 
-      // Garantir que o grafo está carregado (importante para Vercel/serverless)
       await RotasController.garantirGrafoCarregado();
 
-      // Buscar rotas alternativas usando DFS
       const rotasEncontradas = grafoService.encontrarRotasComEscala(
         origemUpper,
         destinoUpper,
@@ -216,14 +201,12 @@ class RotasController {
         });
       }
 
-      // Processar cada rota encontrada
       const rotasDetalhadas = [];
 
       for (const rotaCodigos of rotasEncontradas) {
         const trechos = [];
         let precoTotal = 0;
 
-        // Calcular preço de cada trecho
         for (let i = 0; i < rotaCodigos.length - 1; i++) {
           const origem = rotaCodigos[i];
           const destino = rotaCodigos[i + 1];
@@ -254,12 +237,10 @@ class RotasController {
         });
       }
 
-      // Ordenar por preço (mais barato primeiro)
       rotasDetalhadas.sort((a, b) => a.precoTotal - b.precoTotal);
 
       const tempoResposta = Date.now() - inicio;
 
-      // Registrar consulta
       await grafoService.registrarConsulta(
         origemUpper,
         destinoUpper,
@@ -306,7 +287,6 @@ class RotasController {
     }
   }
 
-  // Verificar se existe voo direto
   static async vooDireto(req, res) {
     try {
       const { origem, destino } = req.params;
@@ -314,10 +294,8 @@ class RotasController {
       const origemUpper = origem.toUpperCase();
       const destinoUpper = destino.toUpperCase();
 
-      // Garantir que o grafo está carregado (importante para Vercel/serverless)
       await RotasController.garantirGrafoCarregado();
 
-      // Usar o grafo para verificar
       const existe = grafoService.temVooDireto(origemUpper, destinoUpper);
 
       if (!existe) {
@@ -332,7 +310,6 @@ class RotasController {
         });
       }
 
-      // Buscar detalhes da rota
       const rota = await prisma.rota.findFirst({
         where: {
           codigoOrigem: origemUpper,

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,7 +20,6 @@ model Aeroporto {
   vooRegular          Boolean  @default(true)
   frequenciaSemanal   Int      @default(0)
   
-  // Relacionamentos
   rotasOrigem         Rota[]   @relation("AeroportoOrigem")
   rotasDestino        Rota[]   @relation("AeroportoDestino")
   
@@ -36,22 +32,18 @@ model Aeroporto {
 model Rota {
   id                  String     @id @default(auto()) @map("_id") @db.ObjectId
   
-  // Origem
   aeroportoOrigemId   String     @db.ObjectId
   aeroportoOrigem     Aeroporto  @relation("AeroportoOrigem", fields: [aeroportoOrigemId], references: [id])
   codigoOrigem        String
   
-  // Destino
   aeroportoDestinoId  String     @db.ObjectId
   aeroportoDestino    Aeroporto  @relation("AeroportoDestino", fields: [aeroportoDestinoId], references: [id])
   codigoDestino       String
   
-  // Informações da rota
   vooRegular          Boolean    @default(true)
   frequenciaSemanal   Int
   bidirecional        Boolean    @default(true)
   
-  // Preço da rota
   preco               Float      @default(0)
   
   createdAt           DateTime   @default(now())
@@ -65,9 +57,9 @@ model Consulta {
   id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   origem              String
   destino             String
-  tipoConsulta        String   // "voo_direto", "rota_curta", "rotas_escala"
+  tipoConsulta        String
   resultado           Json
-  tempoResposta       Int      // em milissegundos
+  tempoResposta       Int
   
   createdAt           DateTime @default(now())
   
@@ -78,14 +70,13 @@ model Usuario {
   id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   nome                String
   email               String   @unique
-  senha               String   // Hash da senha
+  senha               String
   endereco            String
   dataNascimento      DateTime
-  sexo                String   // "M", "F", "Outro"
+  sexo                String
   cpf                 String   @unique
   telefone            String
   
-  // Relacionamento com rotas salvas
   rotasSalvas         RotaSalva[]
   
   createdAt           DateTime @default(now())
@@ -97,29 +88,21 @@ model Usuario {
 model RotaSalva {
   id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   
-  // Relacionamento com usuário
   usuarioId           String   @db.ObjectId
   usuario             Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   
-  // Nome da rota (ex: "Viagem de Férias", "Rota de Negócios")
   nome                String
   
-  // Descrição opcional
   descricao           String?
   
-  // Preço da rota
   preco               Float    @default(0)
   
-  // Array com os códigos dos aeroportos na sequência
-  aeroportos          String[] // Ex: ["GIG", "GRU", "SSA"]
+  aeroportos          String[]
   
-  // Informações detalhadas dos aeroportos (JSON)
-  detalhesAeroportos  Json     // Array com nome, cidade, estado de cada aeroporto
+  detalhesAeroportos  Json
   
-  // Status da rota
   ativa               Boolean  @default(true)
   
-  // Relacionamento com compartilhamentos
   compartilhamentos   RotaCompartilhada[]
   
   createdAt           DateTime @default(now())
@@ -131,21 +114,16 @@ model RotaSalva {
 model RotaCompartilhada {
   id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   
-  // Código único para o link compartilhável (ex: "abc123xyz")
   codigo              String   @unique
   
-  // Relacionamento com a rota salva original
   rotaSalvaId         String   @db.ObjectId
   rotaSalva           RotaSalva @relation(fields: [rotaSalvaId], references: [id], onDelete: Cascade)
   
-  // Controle de privacidade
-  publica             Boolean  @default(false)  // Se true, pode aparecer em galeria pública
-  ativa               Boolean  @default(true)   // Se false, o link não funciona mais
+  publica             Boolean  @default(false)
+  ativa               Boolean  @default(true)
   
-  // Estatísticas
   visualizacoes       Int      @default(0)
   
-  // Data de expiração (opcional)
   expiraEm            DateTime?
   
   createdAt           DateTime @default(now())

@@ -3,15 +3,12 @@ const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 
-// Função para gerar código único
 function gerarCodigoUnico() {
-  return crypto.randomBytes(6).toString('hex'); // Gera código de 12 caracteres
+  return crypto.randomBytes(6).toString('hex');
 }
 
 class RotaCompartilhadaController {
 
-  // POST /compartilhar-rota
-  // Gera um link compartilhável para uma rota salva
   static async compartilhar(req, res) {
     try {
       const { rotaSalvaId, publica = false, diasExpiracao } = req.body;
@@ -23,7 +20,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se a rota salva existe
       const rotaSalva = await prisma.rotaSalva.findUnique({
         where: { id: rotaSalvaId },
         include: {
@@ -43,7 +39,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se já existe um compartilhamento ativo para esta rota
       const compartilhamentoExistente = await prisma.rotaCompartilhada.findFirst({
         where: {
           rotaSalvaId,
@@ -52,7 +47,6 @@ class RotaCompartilhadaController {
       });
 
       if (compartilhamentoExistente) {
-        // Retornar o compartilhamento existente
         return res.json({
           success: true,
           message: 'Link de compartilhamento já existe',
@@ -67,10 +61,8 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Gerar código único
       let codigo = gerarCodigoUnico();
       
-      // Garantir que o código é único
       let tentativas = 0;
       while (tentativas < 10) {
         const existe = await prisma.rotaCompartilhada.findUnique({
@@ -81,14 +73,12 @@ class RotaCompartilhadaController {
         tentativas++;
       }
 
-      // Calcular data de expiração se fornecida
       let expiraEm = null;
       if (diasExpiracao && diasExpiracao > 0) {
         expiraEm = new Date();
         expiraEm.setDate(expiraEm.getDate() + diasExpiracao);
       }
 
-      // Criar compartilhamento
       const compartilhamento = await prisma.rotaCompartilhada.create({
         data: {
           codigo,
@@ -120,8 +110,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // GET /rota-compartilhada/:codigo
-  // Busca uma rota pelo código compartilhado
   static async buscarPorCodigo(req, res) {
     try {
       const { codigo } = req.params;
@@ -149,7 +137,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se o compartilhamento está ativo
       if (!compartilhamento.ativa) {
         return res.status(410).json({
           success: false,
@@ -157,7 +144,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se expirou
       if (compartilhamento.expiraEm && new Date() > compartilhamento.expiraEm) {
         return res.status(410).json({
           success: false,
@@ -165,7 +151,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Incrementar visualizações
       await prisma.rotaCompartilhada.update({
         where: { codigo },
         data: {
@@ -212,8 +197,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // DELETE /rota-compartilhada/:codigo
-  // Desativa um link de compartilhamento
   static async desativar(req, res) {
     try {
       const { codigo } = req.params;
@@ -237,7 +220,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se o usuário é o dono da rota
       if (usuarioId && compartilhamento.rotaSalva.usuarioId !== usuarioId) {
         return res.status(403).json({
           success: false,
@@ -245,7 +227,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Desativar o compartilhamento
       await prisma.rotaCompartilhada.update({
         where: { codigo },
         data: { ativa: false }
@@ -266,8 +247,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // GET /compartilhamentos/:usuarioId
-  // Lista todos os compartilhamentos de um usuário
   static async listarPorUsuario(req, res) {
     try {
       const { usuarioId } = req.params;
@@ -318,8 +297,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // GET /rotas-publicas
-  // Lista rotas públicas (galeria)
   static async listarPublicas(req, res) {
     try {
       const { page = 1, limit = 10 } = req.query;
@@ -402,8 +379,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // POST /salvar-rota-compartilhada
-  // Salva uma rota compartilhada como própria
   static async salvarComoMinha(req, res) {
     try {
       const { codigo, usuarioId, nome, descricao } = req.body;
@@ -415,7 +390,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Buscar a rota compartilhada
       const compartilhamento = await prisma.rotaCompartilhada.findUnique({
         where: { codigo },
         include: {
@@ -437,7 +411,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se o usuário existe
       const usuario = await prisma.usuario.findUnique({
         where: { id: usuarioId }
       });
@@ -451,7 +424,6 @@ class RotaCompartilhadaController {
 
       const rotaOriginal = compartilhamento.rotaSalva;
 
-      // Criar nova rota para o usuário
       const novaRota = await prisma.rotaSalva.create({
         data: {
           usuarioId,
@@ -480,8 +452,6 @@ class RotaCompartilhadaController {
     }
   }
 
-  // PUT /rota-compartilhada/:codigo
-  // Atualiza configurações do compartilhamento
   static async atualizar(req, res) {
     try {
       const { codigo } = req.params;
@@ -505,7 +475,6 @@ class RotaCompartilhadaController {
         });
       }
 
-      // Verificar se o usuário é o dono da rota
       if (usuarioId && compartilhamento.rotaSalva.usuarioId !== usuarioId) {
         return res.status(403).json({
           success: false,
@@ -556,4 +525,3 @@ class RotaCompartilhadaController {
 }
 
 module.exports = RotaCompartilhadaController;
-

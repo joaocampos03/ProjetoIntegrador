@@ -67,12 +67,10 @@ class RotaSalvaController {
 
         detalhesAeroportos.push(aeroporto);
 
-        // Se não é o último aeroporto, buscar o trecho para o próximo
         if (i < aeroportos.length - 1) {
           const origem = codigo.toUpperCase();
           const destino = aeroportos[i + 1].toUpperCase();
 
-          // Buscar rota entre origem e destino
           const rota = await prisma.rota.findFirst({
             where: {
               codigoOrigem: origem,
@@ -81,16 +79,12 @@ class RotaSalvaController {
           });
 
           if (!rota) {
-            // Se não existe voo direto, buscar rota com escalas usando o grafo
-            // Verificar se o grafo está carregado
             const aeroportosNoGrafo = grafoService.getAeroportos();
             
-            // Se o grafo estiver vazio, tentar recarregar
             if (aeroportosNoGrafo.length === 0) {
               try {
                 await grafoService.carregarGrafo();
               } catch (err) {
-                // Silenciosamente ignora erro de recarga
               }
             }
 
@@ -103,7 +97,6 @@ class RotaSalvaController {
               });
             }
 
-            // Calcular o preço da rota alternativa
             let precoRotaAlternativa = 0;
             const trechosAlternativos = [];
             
@@ -128,7 +121,6 @@ class RotaSalvaController {
               }
             }
 
-            // Se encontrou rota alternativa, sugerir ao usuário
             return res.status(400).json({
               success: false,
               message: `Não existe voo direto de ${origem} para ${destino}`,
