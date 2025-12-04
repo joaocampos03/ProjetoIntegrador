@@ -5,6 +5,14 @@ const prisma = new PrismaClient();
 
 class RotasController {
   
+  // Método auxiliar para garantir que o grafo está carregado
+  static async garantirGrafoCarregado() {
+    const aeroportosNoGrafo = grafoService.getAeroportos();
+    if (aeroportosNoGrafo.length === 0) {
+      await grafoService.carregarGrafo();
+    }
+  }
+
   // Buscar melhor caminho entre dois aeroportos (MENOR NÚMERO DE ESCALAS)
   static async melhorCaminho(req, res) {
     try {
@@ -44,6 +52,9 @@ class RotasController {
           message: `Aeroporto de destino ${destinoUpper} não encontrado`
         });
       }
+
+      // Garantir que o grafo está carregado (importante para Vercel/serverless)
+      await RotasController.garantirGrafoCarregado();
 
       // Buscar melhor rota usando BFS (MENOR NÚMERO DE ESCALAS)
       const rotaCodigos = grafoService.encontrarRotaMaisCurta(origemUpper, destinoUpper);
@@ -188,6 +199,9 @@ class RotasController {
         });
       }
 
+      // Garantir que o grafo está carregado (importante para Vercel/serverless)
+      await RotasController.garantirGrafoCarregado();
+
       // Buscar rotas alternativas usando DFS
       const rotasEncontradas = grafoService.encontrarRotasComEscala(
         origemUpper,
@@ -299,6 +313,9 @@ class RotasController {
 
       const origemUpper = origem.toUpperCase();
       const destinoUpper = destino.toUpperCase();
+
+      // Garantir que o grafo está carregado (importante para Vercel/serverless)
+      await RotasController.garantirGrafoCarregado();
 
       // Usar o grafo para verificar
       const existe = grafoService.temVooDireto(origemUpper, destinoUpper);
