@@ -58,4 +58,5 @@ O sistema conta com **25 aeroportos** da malha LATAM Brasil, incluindo:
 ## 👥 Autores
 
 **João Marcelo Campos** - Backend
+
 **Guilherme Santos** - Frontend
